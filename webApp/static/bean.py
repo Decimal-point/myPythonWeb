@@ -7,7 +7,7 @@ def next_id():
 
 class User(Model):
     __table__ = "user"
-    u_id = IntegerField(primary_key=True,default = next_id)
+    u_id = IntegerField(primary_key=True)
     u_name = StringField(type="varchar(50)")
     u_sex = StringField(type="varchar(50)")
     u_phone = StringField(type="varchar(50)")
@@ -16,8 +16,11 @@ class User(Model):
 def test(loop):
     yield from webApp.static.sqlService.pool(loop=loop,user='root',password='tomtop',db='test')
     print("come")
-    u = User(u_name="tom",u_sex="M",u_phone="123456")
-    u.save()
+    #u = User(u_name="tom",u_sex="M",u_phone="123456")
+    #yield from u.save()
+    u = yield from User.find(pk=10)
+    print(u.u_id)
+
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(test(loop))

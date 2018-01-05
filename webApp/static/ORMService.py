@@ -1,5 +1,6 @@
 import logging;logging.basicConfig(level=logging.INFO)
 import webApp.static.sqlService
+import asyncio
 
 class Field(object):
     def __init__(self,name,type,primary_key,default):
@@ -125,14 +126,15 @@ class Model(dict, metaclass=ModelMetaclass):
 
 
     #该方法不了解
+    @asyncio.coroutine
     @classmethod
-    async def findNumber(cls, selectField, where=None, args=None):
+    def findNumber(cls, selectField, where=None, args=None):
         ' find number by select and where. '
         sql = ['select %s _num_ from `%s`' % (selectField, cls.__table__)]
         if where:
             sql.append('where')
             sql.append(where)
-        rs = webApp.static.sqlService.select(' '.join(sql), args, 1)
+        rs = yield from webApp.static.sqlService.select(' '.join(sql), args, 1)
         if len(rs) == 0:
             return None
         return rs[0]['_num_']
@@ -140,9 +142,10 @@ class Model(dict, metaclass=ModelMetaclass):
 
     #主键查找的方法
     @classmethod
-    async def find(cls, pk):
+    @asyncio.coroutine
+    def find(cls, pk):
         ' find object by primary key. '
-        rs = webApp.static.sqlService.select('%s where `%s`=?' % (cls.__select__, cls.__primary_key__), [pk], 1)
+        rs = yield from webApp.static.sqlService.select('%s where `%s`=?' % (cls.__select__, cls.__primary_key__), [pk], 1)
         if len(rs) == 0:
             return None
         return cls(**rs[0])
@@ -150,24 +153,27 @@ class Model(dict, metaclass=ModelMetaclass):
 
     #一下的都是对象方法,所以可以不用传任何参数,方法内部可以使用该对象的所有属性,及其方便
     #保存实例到数据库
-    async def save(self):
+    @asyncio.coroutine
+    def save(self):
         print()
         args = list(map(self.getValueOrDefault, self.__fields__))
         args.append(self.getValueOrDefault(self.__primary_key__))
-        rows =webApp.static.sqlService.execute(self.__insert__, args)
+        rows = yield from webApp.static.sqlService.execute(self.__insert__, args)
         if rows != 1:
             logging.info('failed to insert record: affected rows: %s' % rows)
     #更新数据库数据
-    async def update(self):
+    @asyncio.coroutine
+    def update(self):
         args = list(map(self.getValue, self.__fields__))
         args.append(self.getValue(self.__primary_key__))
-        rows = webApp.static.sqlService.execute(self.__update__, args)
+        rows = yield from webApp.static.sqlService.execute(self.__update__, args)
         if rows != 1:
             logging.info('failed to update by primary key: affected rows: %s' % rows)
     #删除数据
-    async def remove(self):
+    @asyncio.coroutine
+    def remove(self):
         args = [self.getValue(self.__primary_key__)]
-        rows = webApp.static.sqlService.execute(self.__delete__, args)
+        rows = yield from webApp.static.sqlService.execute(self.__delete__, args)
         if rows != 1:
             logging.info('failed to remove by primary key: affected rows: %s' % rows)
 

@@ -25,13 +25,13 @@ def pool(loop,**kw):
 def select(sql,args,size=None):
     log(sql,args)
     with (yield from __pool) as conn:
-        cursor = conn.cursor(aiomysql.DictCursor)
+        cursor = yield from conn.cursor(aiomysql.DictCursor)
         yield from cursor.execute(sql.replace("?","%s"),args or())
         if size:
-            rs = cursor.fecthmany(size)
+            rs = yield from cursor.fetchmany(size)
         else:
-            rs = cursor.fetchall()
-        cursor.close()
+            rs =yield from cursor.fetchall()
+        yield from cursor.close()
         logging.info("rows returned:%d"%len(rs))
         return rs
 @asyncio.coroutine
@@ -39,10 +39,10 @@ def execute(sql,args):
     log(sql,args)
     with (yield from __pool) as conn:
         try:
-            cur = conn.cursor(aiomysql.DictCursor)
-            cur.execute(sql.replace("?","%s"),args)
+            cur = yield from conn.cursor(aiomysql.DictCursor)
+            yield from cur.execute(sql.replace("?","%s"),args)
             count = cur.rowcount()
-            cur.close
+            yield from cur.close
         except BaseException as e:
             raise
         return count
