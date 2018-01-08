@@ -22,6 +22,6 @@ def test(loop):
     print(u.u_id)
 
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(test(loop))
-loop.run_forever()
+
+
+
